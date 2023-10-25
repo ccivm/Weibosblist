@@ -23,7 +23,7 @@ class TweetSpiderByUserID(Spider):
         爬虫入口
         """
         # 这里user_ids可替换成实际待采集的数据
-        user_ids = ['1087770692']
+        user_ids = ['7742275547']
         for user_id in user_ids:
             url = f"https://weibo.com/ajax/statuses/mymblog?uid={user_id}&page=1"
             yield Request(url, callback=self.parse, meta={'user_id': user_id, 'page_num': 1})

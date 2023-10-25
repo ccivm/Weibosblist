@@ -22,7 +22,7 @@ class CommentSpider(Spider):
         爬虫入口
         """
         # 这里tweet_ids可替换成实际待采集的数据
-        tweet_ids = ['Mb15BDYR0']
+        tweet_ids = ['NpkrngOxh']
         for tweet_id in tweet_ids:
             mid = url_to_mid(tweet_id)
             url = f"https://weibo.com/ajax/statuses/buildComments?" \

@@ -23,7 +23,7 @@ class FanSpider(Spider):
         爬虫入口
         """
         # 这里user_ids可替换成实际待采集的数据
-        user_ids = ['1087770692']
+        user_ids = ['7742275547']
         for user_id in user_ids:
             url = self.base_url + f"?relate=fans&page=1&uid={user_id}&type=fans"
             yield Request(url, callback=self.parse, meta={'user': user_id, 'page_num': 1})
