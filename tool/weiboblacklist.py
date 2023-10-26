@@ -28,14 +28,18 @@ def get_sb_list(output_pwd=r"E:\python\nowork\new_weibo\WeiboSpider\output"):
 class WeiboBlackList():
     
     def __init__(self, username, password, blacklist_ids):
-        # with open('cookie.txt', 'rt', encoding='utf-8') as f:
-        #     cookie = f.read().strip()=
-        self.infos_return, self.session = self.login(username, password)
+        with open('..\weibospider\cookie.txt', 'rt', encoding='utf-8') as f:
+            cookie = f.read().strip()
+
+        session = requests.Session()
+
+        self.session=session
+        # self.infos_return, self.session = self.login(username, password)
         self.blacklist_ids = blacklist_ids
         self.headers = {
             'origin': 'https://weibo.com',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',
-            # 'Cookie': cookie
+            'Cookie': cookie
         }
     '''运行'''
     def run(self):
