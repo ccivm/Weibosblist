@@ -1,3 +1,4 @@
+import sqlite3
 from tqdm import tqdm
 import time,os
 from weibobase import WeiBo
@@ -5,6 +6,50 @@ import json
 from jsonpath import jsonpath
 import requests
 # 打开文件并按行读取
+import requests
+
+def delete_filtered_user(screen_name):
+    session = requests.Session()
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+    })
+
+    cookies = {
+     }
+
+    url = 'https://weibo.com/ajax/setting/deleteFilteredUser'
+    data = {"screen_name": screen_name}
+    headers = {
+        'authority': 'weibo.com',
+        'method': 'POST',
+        'path': '/ajax/setting/deleteFilteredUser',
+        'scheme': 'https',
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'client-version': 'v2.44.62',
+        'origin': 'https://weibo.com',
+        'referer': 'https://weibo.com/set/shield?type=user',
+        'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'server-version': 'v2024.02.04.1',
+        'x-requested-with': 'XMLHttpRequest',
+        'x-xsrf-token': 'GEzXfgTjixI83EYcWC9ZdeSs',
+    }
+
+    try:
+        response = session.post(url, headers=headers, cookies=cookies, json=data)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        return f"Error: {e}"
+
+
+
 def get_sb_list(output_pwd=r"E:\python\nowork\new_weibo\WeiboSpider\output"):
     returndata=[]
     sb_list_files=os.listdir(output_pwd)
@@ -28,7 +73,7 @@ def get_sb_list(output_pwd=r"E:\python\nowork\new_weibo\WeiboSpider\output"):
 class WeiboBlackList():
     
     def __init__(self, username, password, blacklist_ids):
-        with open('..\weibospider\cookie.txt', 'rt', encoding='utf-8') as f:
+        with open('/root/Weibosblist/weibospider/cookie.txt', 'rt', encoding='utf-8') as f:
             cookie = f.read().strip()
 
         session = requests.Session()
@@ -73,12 +118,67 @@ class WeiboBlackList():
     '''logging'''
     def logging(self, msg, tip='INFO'):
         print(f'[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())} {tip}]: {msg}')
+    
 
+    def getFilteredUsers(self):
+        # 连接到 SQLite 数据库（如果不存在则会被创建）
+        conn = sqlite3.connect('filtered_users.db')
+        cursor = conn.cursor()
+        # 创建一个表格来存储数据
+        cursor.execute('''CREATE TABLE IF NOT EXISTS filtered_users
+                        (page INTEGER, card_type INTEGER, scheme TEXT, pic TEXT, title_sub TEXT, desc1 TEXT, itemid TEXT)''')
+
+        for i in range(1, 400):
+            response = self.session.get(f"https://weibo.com/ajax/setting/getFilteredUsers?page={i}", headers=self.headers)
+            if response.status_code == 200:
+                # print(response.json())
+                if response.json()["card_group"].__len__()!= 0:
+                    card_group = response.json()["card_group"]
+                    print(card_group)
+                    for card in card_group:
+                        cursor.execute("INSERT INTO filtered_users (page, card_type, scheme, pic, title_sub, desc1, itemid) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                    (i, card["card_type"], card["scheme"], card["pic"], card["title_sub"], card["desc1"], card["itemid"]))
+                    conn.commit()
+                    time.sleep(3)
+                    print(f"第{i}页")
+                else:
+                    print("获取完毕")
+                    break
+
+
+        conn.close()
+
+    def deleteFilteredUser(self):
+
+        conn = sqlite3.connect('filtered_users.db')
+        cursor = conn.cursor()
+
+
+        cursor.execute("SELECT title_sub FROM filtered_users")
+        users = cursor.fetchall()
+
+        for user in users:
+
+            cursor.execute("DELETE FROM filtered_users WHERE title_sub=?", (user[0],))
+            conn.commit()
+            result = delete_filtered_user(user[0])
+            # print(result)
+            print(f"已删除用户：{user[0]}")
+            time.sleep(1)
+
+        # 关闭连接
+        conn.close()
+
+                        
+
+           
 
 
 if __name__ == "__main__":
     
-    blacklist_ids=get_sb_list()
 
-    WB=WeiboBlackList(username='', password='',blacklist_ids=blacklist_ids)
-    WB.run()
+
+    WB=WeiboBlackList(username='', password='',blacklist_ids="")
+    WB.getFilteredUsers()
+    WB.deleteFilteredUser()
+    
